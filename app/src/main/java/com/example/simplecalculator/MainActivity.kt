@@ -8,138 +8,148 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import java.text.DecimalFormat
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var tvResult: TextView
-    private var firstOperand: Double = 0.0
-    private var secondOperand: Double = 0.0
-    private var currentOperator: String = ""
-    private var isNewInput: Boolean = true
+    private var isResultCalculated = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
 
-        val mainContainer = findViewById<View>(R.id.mainContainer)
-        ViewCompat.setOnApplyWindowInsetsListener(mainContainer) { view, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
-            view.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.mainContainer)) { v, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
+            v.setPadding(bars.left, bars.top, bars.right, bars.bottom)
             insets
         }
 
         tvResult = findViewById(R.id.tvResult)
+        tvResult.text = "0"
 
         setupButtons()
     }
 
     private fun setupButtons() {
-        val numberIds = listOf(
+        val buttons = listOf(
             R.id.btn0, R.id.btn1, R.id.btn2, R.id.btn3, R.id.btn4,
-            R.id.btn5, R.id.btn6, R.id.btn7, R.id.btn8, R.id.btn9
+            R.id.btn5, R.id.btn6, R.id.btn7, R.id.btn8, R.id.btn9,
+            R.id.btnPlus, R.id.btnMinus, R.id.btnMultiply, R.id.btnDivide,
+            R.id.btnDot, R.id.btnEquals, R.id.btnAC, R.id.btnPercent, R.id.btnPlusMinus
         )
 
-        numberIds.forEach { id ->
-            findViewById<Button>(id).setOnClickListener { view ->
-                val button = view as Button
-                onNumberClick(button.text.toString())
+        buttons.forEach { id ->
+            findViewById<Button>(id).setOnClickListener { onButtonClick(it as Button) }
+        }
+    }
+
+    private fun onButtonClick(btn: Button) {
+        val input = btn.text.toString()
+        val currentText = tvResult.text.toString()
+
+        when (input) {
+            "AC" -> {
+                tvResult.text = "0"
+                isResultCalculated = false
             }
-        }
-
-        findViewById<Button>(R.id.btnDot).setOnClickListener { onDotClick() }
-
-        val operatorIds = listOf(
-            R.id.btnPlus, R.id.btnMinus, R.id.btnMultiply, R.id.btnDivide
-        )
-        operatorIds.forEach { id ->
-            findViewById<Button>(id).setOnClickListener { view ->
-                val button = view as Button
-                onOperatorClick(button.text.toString())
-            }
-        }
-
-        findViewById<Button>(R.id.btnEquals).setOnClickListener { onEqualsClick() }
-        findViewById<Button>(R.id.btnAC).setOnClickListener { onClearClick() }
-        findViewById<Button>(R.id.btnPercent).setOnClickListener { onPercentClick() }
-        findViewById<Button>(R.id.btnPlusMinus).setOnClickListener { onPlusMinusClick() }
-    }
-
-    private fun onNumberClick(number: String) {
-        if (isNewInput) {
-            tvResult.text = number
-            isNewInput = false
-        } else {
-            if (tvResult.text.length < 15) {
-                tvResult.text = "${tvResult.text}$number"
-            }
-        }
-    }
-
-    private fun onDotClick() {
-        if (isNewInput) {
-            tvResult.text = "0."
-            isNewInput = false
-        } else if (!tvResult.text.contains(".")) {
-            tvResult.text = "${tvResult.text}."
-        }
-    }
-
-    private fun onOperatorClick(operator: String) {
-        firstOperand = tvResult.text.toString().toDoubleOrNull() ?: 0.0
-        currentOperator = operator
-        isNewInput = true
-    }
-
-    private fun onEqualsClick() {
-        secondOperand = tvResult.text.toString().toDoubleOrNull() ?: 0.0
-        var result = 0.0
-
-        when (currentOperator) {
-            "+" -> result = firstOperand + secondOperand
-            "-" -> result = firstOperand - secondOperand
-            "X" -> result = firstOperand * secondOperand
-            "/" -> {
-                if (secondOperand != 0.0) {
-                    result = firstOperand / secondOperand
-                } else {
-                    result = Double.NaN
+            "=" -> {
+                try {
+                    val result = Expression.eval(currentText)
+                    tvResult.text = formatResult(result)
+                    isResultCalculated = true
+                } catch (e: Exception) {
+                    tvResult.text = "Error"
+                    isResultCalculated = true
                 }
             }
-        }
-
-
-        if (result % 1 == 0.0) {
-            tvResult.text = result.toInt().toString()
-        } else {
-            tvResult.text = result.toString()
-        }
-
-        isNewInput = true
-    }
-
-    private fun onClearClick() {
-        tvResult.text = "0"
-        firstOperand = 0.0
-        secondOperand = 0.0
-        currentOperator = ""
-        isNewInput = true
-    }
-
-    private fun onPercentClick() {
-        val value = tvResult.text.toString().toDoubleOrNull() ?: 0.0
-        tvResult.text = (value / 100).toString()
-        isNewInput = true
-    }
-
-    private fun onPlusMinusClick() {
-        val value = tvResult.text.toString().toDoubleOrNull() ?: 0.0
-        if (value != 0.0) {
-            if (value % 1 == 0.0) {
-                tvResult.text = (value * -1).toInt().toString()
-            } else {
-                tvResult.text = (value * -1).toString()
+            "+/-" -> {
+                tvResult.text = toggleSign(currentText)
+            }
+            "%" -> {
+                if (currentText != "Error" && currentText.last().isDigit()) {
+                    tvResult.append("%")
+                }
+            }
+            else -> {
+                handleInput(input, currentText)
             }
         }
+    }
+
+    private fun handleInput(input: String, currentText: String) {
+        if (currentText == "Error") {
+            tvResult.text = if (isOperator(input)) "0$input" else input
+            return
+        }
+
+        if (isResultCalculated && !isOperator(input)) {
+            tvResult.text = input
+            isResultCalculated = false
+            return
+        }
+
+        if (isResultCalculated && isOperator(input)) {
+            isResultCalculated = false
+        }
+
+        if (currentText == "0" && !isOperator(input) && input != ".") {
+            tvResult.text = input
+            return
+        }
+
+        if (isOperator(input) && currentText.isNotEmpty()) {
+            val lastChar = currentText.last().toString()
+            if (isOperator(lastChar)) {
+                tvResult.text = currentText.dropLast(1) + input
+                return
+            }
+        }
+
+        tvResult.append(input)
+    }
+
+    private fun toggleSign(displayValue: String): String {
+        if (displayValue == "Error" || displayValue == "0") return displayValue
+
+        val lastOpIndex = findLastOperatorIndex(displayValue)
+
+        val baseString = if (lastOpIndex != -1) displayValue.substring(0, lastOpIndex + 1) else ""
+        val currentNumber = if (lastOpIndex != -1) displayValue.substring(lastOpIndex + 1) else displayValue
+
+        if (currentNumber.isEmpty()) return displayValue
+
+        return if (currentNumber.startsWith("(-") && currentNumber.endsWith(")")) {
+            val innerValue = currentNumber.substring(2, currentNumber.length - 1)
+            baseString + innerValue
+        } else {
+            "$baseString(-$currentNumber)"
+        }
+    }
+
+    private fun findLastOperatorIndex(str: String): Int {
+        val operators = listOf("+", "-", "X", "/", "*")
+        var depth = 0
+        for (i in str.indices.reversed()) {
+            val char = str[i]
+            if (char == ')') depth++
+            if (char == '(') depth--
+
+            if (depth == 0 && operators.contains(char.toString())) {
+                if (char == '-' && i == 0) return -1
+                return i
+            }
+        }
+        return -1
+    }
+
+    private fun isOperator(str: String): Boolean {
+        return str == "+" || str == "-" || str == "X" || str == "/" || str == "*"
+    }
+
+    private fun formatResult(value: Double): String {
+        val df = DecimalFormat("#.##########")
+        return df.format(value).replace(",", ".")
     }
 }
