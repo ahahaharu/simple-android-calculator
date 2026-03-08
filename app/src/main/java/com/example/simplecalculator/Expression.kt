@@ -3,12 +3,13 @@ package com.example.simplecalculator
 object Expression {
 
     fun eval(expression: String): Double {
-        val processed = preprocess(expression)
+        val cleaned = expression.replace(",", ".").replace(" ", "")
+        val processed = preprocess(cleaned)
 
         var prepared = processed
+            .replace("×", "*")
             .replace("X", "*")
             .replace("x", "*")
-            .replace(" ", "")
 
         return object : Any() {
             var pos = -1

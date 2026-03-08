@@ -28,11 +28,7 @@
         android:layout_weight="4"
         android:orientation="vertical">
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:orientation="horizontal">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="horizontal">
             <androidx.appcompat.widget.AppCompatButton android:id="@+id/btn7" style="@style/CalcButton.Dark" android:layout_height="match_parent" android:text="7"/>
             <androidx.appcompat.widget.AppCompatButton android:id="@+id/btn8" style="@style/CalcButton.Dark" android:layout_height="match_parent" android:text="8"/>
             <androidx.appcompat.widget.AppCompatButton android:id="@+id/btn9" style="@style/CalcButton.Dark" android:layout_height="match_parent" android:text="9"/>
@@ -40,23 +36,15 @@
             <androidx.appcompat.widget.AppCompatButton android:id="@+id/btnDivide" style="@style/CalcButton.Orange" android:layout_height="match_parent" android:text="/" />
         </LinearLayout>
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:orientation="horizontal">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="horizontal">
             <androidx.appcompat.widget.AppCompatButton android:id="@+id/btn4" style="@style/CalcButton.Dark" android:layout_height="match_parent" android:text="4"/>
             <androidx.appcompat.widget.AppCompatButton android:id="@+id/btn5" style="@style/CalcButton.Dark" android:layout_height="match_parent" android:text="5"/>
             <androidx.appcompat.widget.AppCompatButton android:id="@+id/btn6" style="@style/CalcButton.Dark" android:layout_height="match_parent" android:text="6"/>
             <androidx.appcompat.widget.AppCompatButton android:id="@+id/btnPlusMinus" style="@style/CalcButton.Light" android:layout_height="match_parent" android:text="+/-" />
-            <androidx.appcompat.widget.AppCompatButton android:id="@+id/btnMultiply" style="@style/CalcButton.Orange" android:layout_height="match_parent" android:text="X"/>
+            <androidx.appcompat.widget.AppCompatButton android:id="@+id/btnMultiply" style="@style/CalcButton.Orange" android:layout_height="match_parent" android:text="×"/>
         </LinearLayout>
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:orientation="horizontal">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="horizontal">
             <androidx.appcompat.widget.AppCompatButton android:id="@+id/btn1" style="@style/CalcButton.Dark" android:layout_height="match_parent" android:text="1"/>
             <androidx.appcompat.widget.AppCompatButton android:id="@+id/btn2" style="@style/CalcButton.Dark" android:layout_height="match_parent" android:text="2"/>
             <androidx.appcompat.widget.AppCompatButton android:id="@+id/btn3" style="@style/CalcButton.Dark" android:layout_height="match_parent" android:text="3"/>
@@ -64,19 +52,11 @@
             <androidx.appcompat.widget.AppCompatButton android:id="@+id/btnMinus" style="@style/CalcButton.Orange" android:layout_height="match_parent" android:text="-"/>
         </LinearLayout>
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:orientation="horizontal">
-
-
+        <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="horizontal">
             <androidx.appcompat.widget.AppCompatButton android:id="@+id/btn0" style="@style/CalcButton.Dark" android:layout_height="match_parent" android:layout_weight="2" android:text="0" />
-
             <androidx.appcompat.widget.AppCompatButton android:id="@+id/btnDot" style="@style/CalcButton.Dark" android:layout_height="match_parent" android:text="."/>
             <androidx.appcompat.widget.AppCompatButton android:id="@+id/btnEquals" style="@style/CalcButton.Orange" android:layout_height="match_parent" android:text="="/>
             <androidx.appcompat.widget.AppCompatButton android:id="@+id/btnPlus" style="@style/CalcButton.Orange" android:layout_height="match_parent" android:text="+"/>
         </LinearLayout>
-
     </LinearLayout>
 </LinearLayout>
