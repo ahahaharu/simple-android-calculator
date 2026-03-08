@@ -178,6 +178,17 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun formatResult(value: Double): String {
+        if (value.isNaN() || value.isInfinite()) {
+            return "Error"
+        }
+
+        val absValue = Math.abs(value)
+
+        if (absValue > 0 && (absValue >= 1E10 || absValue < 1E-5)) {
+            val scientificFormat = DecimalFormat("0.######E0")
+            return scientificFormat.format(value).replace(",", ".")
+        }
+
         val df = DecimalFormat("#.##########")
         return df.format(value).replace(",", ".")
     }
