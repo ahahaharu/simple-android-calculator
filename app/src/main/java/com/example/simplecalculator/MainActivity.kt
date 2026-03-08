@@ -1,6 +1,15 @@
 package com.example.simplecalculator
 
+import android.content.Context
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
+import android.os.Build
 import android.os.Bundle
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import android.view.View
 import android.widget.Button
 import android.widget.TextView
@@ -10,11 +19,15 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import java.text.DecimalFormat
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), SensorEventListener {
 
     private lateinit var tvResult: TextView
     private var isResultCalculated = false
     private val MAX_INPUT_LENGTH = 15
+
+    private lateinit var sensorManager: SensorManager
+    private var accelerometer: Sensor? = null
+    private var lastShakeTime: Long = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,6 +47,92 @@ class MainActivity : AppCompatActivity() {
         tvResult.text = "0"
 
         setupButtons()
+        setupSensors()
+    }
+
+
+    private fun setupSensors() {
+        sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        accelerometer?.let {
+            sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_NORMAL)
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        sensorManager.unregisterListener(this)
+    }
+
+    override fun onSensorChanged(event: SensorEvent?) {
+        if (event != null && event.sensor.type == Sensor.TYPE_ACCELEROMETER) {
+            val x = event.values[0]
+            val y = event.values[1]
+            val z = event.values[2]
+
+            val gX = x / SensorManager.GRAVITY_EARTH
+            val gY = y / SensorManager.GRAVITY_EARTH
+            val gZ = z / SensorManager.GRAVITY_EARTH
+
+            val gForce = Math.sqrt((gX * gX + gY * gY + gZ * gZ).toDouble()).toFloat()
+
+            if (gForce > 2.5f) {
+                val currentTime = System.currentTimeMillis()
+                if (currentTime - lastShakeTime > 1000) {
+                    lastShakeTime = currentTime
+
+                    if (tvResult.text != "0" && tvResult.text != "Error") {
+                        clearCalculator()
+                        vibratePhone()
+                    }
+                }
+            }
+        }
+    }
+
+    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+
+    }
+
+    private fun clearCalculator() {
+        tvResult.text = "0"
+        isResultCalculated = false
+        updateFontSize()
+    }
+
+    private fun vibratePhone() {
+        val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val vibratorManager = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+            vibratorManager.defaultVibrator
+        } else {
+            @Suppress("DEPRECATION")
+            getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            vibrator.vibrate(VibrationEffect.createOneShot(200, VibrationEffect.DEFAULT_AMPLITUDE))
+        } else {
+            @Suppress("DEPRECATION")
+            vibrator.vibrate(200)
+        }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString("SAVED_TEXT", tvResult.text.toString())
+        outState.putBoolean("SAVED_CALC_FLAG", isResultCalculated)
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        tvResult.text = savedInstanceState.getString("SAVED_TEXT", "0")
+        isResultCalculated = savedInstanceState.getBoolean("SAVED_CALC_FLAG", false)
+
+        updateFontSize()
     }
 
     private fun setupButtons() {
@@ -55,9 +154,7 @@ class MainActivity : AppCompatActivity() {
 
         when (input) {
             "AC" -> {
-                tvResult.text = "0"
-                isResultCalculated = false
-                updateFontSize()
+                clearCalculator()
             }
             "=" -> {
                 try {
@@ -94,7 +191,6 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        // Если результат только что выведен, при нажатии цифры начинаем заново
         if (isResultCalculated) {
             if (!isOperator(input)) {
                 tvResult.text = if (input == ".") "0." else input
@@ -105,20 +201,17 @@ class MainActivity : AppCompatActivity() {
             isResultCalculated = false
         }
 
-        // Проверка лимита цифр в текущем вводимом числе (Regex включает × и X)
         val lastNumber = currentText.split(Regex("[+\\-×X/]")).last()
         if (!isOperator(input) && lastNumber.length >= MAX_INPUT_LENGTH && input != ".") {
             return
         }
 
-        // Обработка начального нуля
         if (currentText == "0" && !isOperator(input) && input != ".") {
             tvResult.text = input
             updateFontSize()
             return
         }
 
-        // Замена оператора, если он уже стоит в конце
         if (isOperator(input) && currentText.isNotEmpty()) {
             val lastChar = currentText.last().toString()
             if (isOperator(lastChar)) {
@@ -178,17 +271,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun formatResult(value: Double): String {
-        if (value.isNaN() || value.isInfinite()) {
-            return "Error"
-        }
-
+        if (value.isNaN() || value.isInfinite()) return "Error"
         val absValue = Math.abs(value)
-
         if (absValue > 0 && (absValue >= 1E10 || absValue < 1E-5)) {
             val scientificFormat = DecimalFormat("0.######E0")
             return scientificFormat.format(value).replace(",", ".")
         }
-
         val df = DecimalFormat("#.##########")
         return df.format(value).replace(",", ".")
     }
