@@ -73,10 +73,6 @@ object Expression {
         }.parse()
     }
 
-    /**
-     * Самая главная функция для твоей задачи.
-     * Она ищет паттерны "Число Оператор Число%" и переписывает их.
-     */
     private fun preprocess(input: String): String {
         var str = input.replace("X", "*")
 

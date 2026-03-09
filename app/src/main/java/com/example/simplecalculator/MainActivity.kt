@@ -16,6 +16,8 @@ class MainActivity : AppCompatActivity() {
     private var isResultCalculated = false
     private val MAX_INPUT_LENGTH = 15
 
+    private lateinit var shakeDetector: ShakeDetector
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -34,6 +36,41 @@ class MainActivity : AppCompatActivity() {
         tvResult.text = "0"
 
         setupButtons()
+
+        shakeDetector = ShakeDetector(this) {
+            if (tvResult.text != "0" && tvResult.text != "Error") {
+                clearCalculator()
+            }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        shakeDetector.startListening()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        shakeDetector.stopListening()
+    }
+
+    private fun clearCalculator() {
+        tvResult.text = "0"
+        isResultCalculated = false
+        updateFontSize()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString("SAVED_TEXT", tvResult.text.toString())
+        outState.putBoolean("SAVED_CALC_FLAG", isResultCalculated)
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        tvResult.text = savedInstanceState.getString("SAVED_TEXT", "0")
+        isResultCalculated = savedInstanceState.getBoolean("SAVED_CALC_FLAG", false)
+        updateFontSize()
     }
 
     private fun setupButtons() {
@@ -54,11 +91,7 @@ class MainActivity : AppCompatActivity() {
         val currentText = tvResult.text.toString()
 
         when (input) {
-            "AC" -> {
-                tvResult.text = "0"
-                isResultCalculated = false
-                updateFontSize()
-            }
+            "AC" -> clearCalculator()
             "=" -> {
                 try {
                     val result = Expression.eval(currentText)
@@ -81,9 +114,7 @@ class MainActivity : AppCompatActivity() {
                     updateFontSize()
                 }
             }
-            else -> {
-                handleInput(input, currentText)
-            }
+            else -> handleInput(input, currentText)
         }
     }
 
@@ -94,7 +125,6 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        // Если результат только что выведен, при нажатии цифры начинаем заново
         if (isResultCalculated) {
             if (!isOperator(input)) {
                 tvResult.text = if (input == ".") "0." else input
@@ -105,20 +135,17 @@ class MainActivity : AppCompatActivity() {
             isResultCalculated = false
         }
 
-        // Проверка лимита цифр в текущем вводимом числе (Regex включает × и X)
         val lastNumber = currentText.split(Regex("[+\\-×X/]")).last()
         if (!isOperator(input) && lastNumber.length >= MAX_INPUT_LENGTH && input != ".") {
             return
         }
 
-        // Обработка начального нуля
         if (currentText == "0" && !isOperator(input) && input != ".") {
             tvResult.text = input
             updateFontSize()
             return
         }
 
-        // Замена оператора, если он уже стоит в конце
         if (isOperator(input) && currentText.isNotEmpty()) {
             val lastChar = currentText.last().toString()
             if (isOperator(lastChar)) {
@@ -178,17 +205,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun formatResult(value: Double): String {
-        if (value.isNaN() || value.isInfinite()) {
-            return "Error"
-        }
-
+        if (value.isNaN() || value.isInfinite()) return "Error"
         val absValue = Math.abs(value)
-
         if (absValue > 0 && (absValue >= 1E10 || absValue < 1E-5)) {
             val scientificFormat = DecimalFormat("0.######E0")
             return scientificFormat.format(value).replace(",", ".")
         }
-
         val df = DecimalFormat("#.##########")
         return df.format(value).replace(",", ".")
     }
